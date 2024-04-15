@@ -1,12 +1,12 @@
-## Skład grupy:
+## Contributors:
 - Helena Szczepanowska
 - Tomasz Kurcoń 
 
-##  Temat: Sklep internetowy (jeszcze nie podjęta decyzja na 100%)
+##  Project name: Car rental
 
 
-## Technologie:
-- MongoDB,
-- GraphQL,
-- Nodejs,
+## Used technologies:
+- MongoDB, Mongoose
+- Node.js with Express.js,
+- Swagger
 
