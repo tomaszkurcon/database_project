@@ -22,6 +22,7 @@ module.exports = {
     ecmaVersion: 'latest'
   },
   rules: {
-    quotes: 'off'
+    quotes: 'off',
+    "no-unused-vars": 'warn',
   }
 };
