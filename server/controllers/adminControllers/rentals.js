@@ -1,9 +1,7 @@
 const Car = require("../../models/car");
 
 exports.postAddCarRental = async (req, res) => {
-
   const { model, amount } = req.body;
-  console.log(req.body);
   const car = new Car({
     model,
     amount,
@@ -17,6 +15,4 @@ exports.postAddCarRental = async (req, res) => {
   }
 };
 
-exports.putUpdateCar = async (req, res) => {
-    
-}
+exports.putUpdateCar = async (req, res) => {};
