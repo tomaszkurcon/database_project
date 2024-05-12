@@ -10,6 +10,8 @@ const carSchema = new Schema({
     required: true,
     type: Number,
   },
+}, {
+  timestamps: true,
 });
 
 module.exports = mongoose.model("Car", carSchema);
