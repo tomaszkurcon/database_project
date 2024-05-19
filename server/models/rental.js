@@ -11,11 +11,11 @@ const rentalSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Car",
     },
-    start: {
+    startDate: {
       type: Date,
       required: true,
     },
-    end: {
+    endDate: {
       type: Date,
       required: true,
     },
