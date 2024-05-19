@@ -1,10 +1,25 @@
 const Car = require("../../models/car");
 
-exports.postAddCarRental = async (req, res) => {
-  const { model, amount } = req.body;
+exports.postAddCar = async (req, res) => {
+  const { 
+    brand, 
+    model, 
+    pricePerDay, 
+    year, 
+    color,
+    fuelType,
+    rentals,
+    ratings  
+    } = req.body;
   const car = new Car({
-    model,
-    amount,
+    brand, 
+    model, 
+    pricePerDay, 
+    year, 
+    color,
+    fuelType,
+    rentals,
+    ratings
   });
   try {
     await car.save();
