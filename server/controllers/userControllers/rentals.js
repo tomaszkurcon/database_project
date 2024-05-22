@@ -6,7 +6,7 @@ exports.postAddRental = async (req, res) => {
 
   try {
     const overlappingRentals = await Rental.find({
-      car: car,
+      car,
       startDate: { $lte: endDate }, 
       endDate: { $gte: startDate }
     });
@@ -24,7 +24,7 @@ exports.postAddRental = async (req, res) => {
       });
     }
 
-    pricePerDay = carDetails.pricePerDay;
+    const pricePerDay = carDetails.pricePerDay;
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end - start);
