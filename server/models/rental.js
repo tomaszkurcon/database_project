@@ -3,21 +3,21 @@ const Schema = mongoose.Schema;
 
 const rentalSchema = new Schema(
   {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     car: {
       type: Schema.Types.ObjectId,
       ref: "Car",
     },
-    start: {
+    startDate: {
       type: Date,
       required: true,
     },
-    end: {
+    endDate: {
       type: Date,
       required: true,
-    },
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
     },
     price: {
       type: Number,

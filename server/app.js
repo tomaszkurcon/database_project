@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/adminRoutes/admin");
 const multer = require("multer");
+const userRoutes = require("./routes/userRoutes/user");
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(multer().single("file"));
 
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
+app.use("/user", userRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)

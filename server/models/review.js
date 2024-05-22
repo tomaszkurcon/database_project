@@ -11,12 +11,14 @@ const reviewSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    review: {
+    description: {
       type: String,
       required: true,
     },
     rating: {
       type: Number,
+      min: 1,
+      max: 5,
       required: true,
     },
   },
@@ -25,4 +27,4 @@ const reviewSchema = new Schema(
   }
 );
 
-module.exports = mongoose.model("Car", reviewSchema);
+module.exports = mongoose.model("Review", reviewSchema);
