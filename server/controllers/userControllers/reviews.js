@@ -4,14 +4,15 @@ const Car = require("../../models/car");
 exports.postAddReview = async (req, res) => {
     const { car, user, description, rating  } = req.body;
 
-    const carDetails = await Car.findById(car);
-    if (!carDetails) {
-        return res.status(404).json({
-            message: "Car not found"
-        });
-    }
     
     try {
+        
+        const carDetails = await Car.findById(car);
+        if (!carDetails) {
+            return res.status(404).json({
+                message: "Car not found"
+            });
+        }
 
         const review = new Review({
             car,
