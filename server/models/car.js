@@ -25,8 +25,12 @@ const carSchema = new Schema({
   fuelType: {
     type: String,
     required: true
-  }
-  ,
+  },
+  quantity: {
+    type: Number,
+    minimum: 1,
+    required: true
+  },
   rentals:  { 
     type: [
       {
@@ -47,10 +51,10 @@ const carSchema = new Schema({
   ], 
   default: []
   },
-  ratings: {
+  reviews: {
     type: [
       {
-        userId: {
+        user: {
           type: Schema.Types.ObjectId,
           ref: "User",
           required: true

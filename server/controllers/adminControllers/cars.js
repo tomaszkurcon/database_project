@@ -8,6 +8,7 @@ exports.postAddCar = async (req, res) => {
     year, 
     color,
     fuelType,
+    quantity,
     rentals,
     ratings  
     } = req.body;
@@ -18,6 +19,7 @@ exports.postAddCar = async (req, res) => {
     year, 
     color,
     fuelType,
+    quantity,
     rentals,
     ratings
   });
