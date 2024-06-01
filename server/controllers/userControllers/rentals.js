@@ -76,7 +76,7 @@ exports.postAddRental = async (req, res) => {
   }
 };
 
-exports.putUpdateRentalPaidStatus = async (req, res) => {
+exports.patchUpdateRentalPaidStatus = async (req, res) => {
   const { rentalId } = req.body;
 
   try {
@@ -98,7 +98,7 @@ exports.putUpdateRentalPaidStatus = async (req, res) => {
   }
 };
 
-exports.putUpdateRentalDates = async (req, res) => {
+exports.patchUpdateRentalDates = async (req, res) => {
   const { rentalId, newStartDate, newEndDate } = req.body;
 
   try {
@@ -116,6 +116,10 @@ exports.putUpdateRentalDates = async (req, res) => {
 
     const start = new Date(newStartDate);
     const end = new Date(newEndDate);
+    
+    if(rentalDetails.paid === true){
+      return res.status(400).json({ message: "Cannot update dates for a paid rental." });
+    }
 
     if (start >= end) {
       return res.status(400).json({ message: "End date should be greater than start date." });
@@ -130,7 +134,7 @@ exports.putUpdateRentalDates = async (req, res) => {
         message: "Car is already rented for the requested dates."
       });
     }
-    
+
     const pricePerDay = carDetails.pricePerDay;
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 2; 

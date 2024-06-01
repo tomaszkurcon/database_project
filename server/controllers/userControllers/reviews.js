@@ -23,6 +23,7 @@ exports.postAddReview = async (req, res) => {
         await review.save();
   
         carDetails.reviews.push({
+            reviewId: review._id,
             user,
             description,
             rating
@@ -36,4 +37,3 @@ exports.postAddReview = async (req, res) => {
     }
 };
 
-exports.putUpdateReview = async (req, res) => {};

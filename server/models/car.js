@@ -54,6 +54,11 @@ const carSchema = new Schema({
   reviews: {
     type: [
       {
+        reviewId: {
+          type: Schema.Types.ObjectId,
+          ref: "Review",
+          required: true
+        },
         user: {
           type: Schema.Types.ObjectId,
           ref: "User",
