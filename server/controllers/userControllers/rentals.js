@@ -205,3 +205,29 @@ exports.deleteRemoveRental = async (req, res) => {
   }
 };
 
+exports.getUserRentalHistory = async (req, res) => {
+
+  const params = req.params; 
+  const userId = params.id;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+    res.status(200).json({
+      userId: userId,
+      rentalHistory: user.rentals
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Internal server error"
+    });
+  }
+};
+
+
