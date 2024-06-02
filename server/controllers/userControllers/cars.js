@@ -129,3 +129,88 @@ exports.getMostRentedCars = async (req, res) => {
       res.status(500).json({ error: "Internal server error" });
     }
   };
+
+  exports.getFilteredCars = async (req, res) => {
+    const { brand, priceMin, priceMax, startDate, endDate, yearMin, yearMax, color, fuelType } = req.query;
+
+    try {
+        const filter = {};
+        if (brand) {
+            const brands = brand.split(','); 
+            filter.brand = { $in: brands }; 
+        }
+        if (color) {
+          const colors = color.split(','); 
+          filter.color = { $in: colors }; 
+        }
+        if (fuelType) {
+            const fuelTypes = fuelType.split(','); 
+            filter.fuelType = { $in: fuelTypes }; 
+        }
+        if (priceMin || priceMax) {
+            filter.pricePerDay = {};
+            if (priceMin) {
+                filter.pricePerDay.$gte = Number(priceMin);
+            }
+            if (priceMax) {
+                filter.pricePerDay.$lte = Number(priceMax);
+            }
+        }
+        if (yearMin || yearMax) {
+            filter.year = {};
+            if (yearMin) {
+                filter.year.$gte = Number(yearMin);
+            }
+            if (yearMax) {
+                filter.year.$lte = Number(yearMax);
+            }
+        }
+      
+        const overlapping = {};
+        if (startDate && endDate) {
+            overlapping.rentals = {
+                $filter: {
+                    input: "$rentals",
+                    as: "rental",
+                    cond: {
+                        $and: [
+                            { $lte: ["$$rental.startDate", new Date(endDate)] },
+                            { $gte: ["$$rental.endDate", new Date(startDate)] }
+                        ]
+                    }
+                }
+            };
+        }
+
+        const cars = await Car.aggregate([
+            { $match: filter },
+            {
+                $addFields: {
+                    overlappingRentals: overlapping.rentals ? overlapping.rentals : []
+                }
+            },
+            {
+                $addFields: {
+                    numberOfRented: { $size: "$overlappingRentals" }
+                }
+            },
+            {
+                $match: {
+                    $expr: {
+                        $lt: ["$numberOfRented", "$quantity"]
+                    }
+                }
+            },
+            { $project: { brand: 1, model: 1, pricePerDay: 1, year: 1, color: 1, fuelType: 1, quantity: 1, numberOfRented: 1 } }
+        ]);
+
+        if (cars.length === 0) {
+            return res.status(404).json({ message: "No cars found that match the filters." });
+        }
+
+        res.status(200).json(cars);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
