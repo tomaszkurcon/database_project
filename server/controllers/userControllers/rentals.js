@@ -42,7 +42,7 @@ exports.postAddRental = async (req, res) => {
 
     const pricePerDay = carDetails.pricePerDay;
     const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 2; 
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
     const price = diffDays * pricePerDay;
     const rental = new Rental({
       car, 
@@ -137,7 +137,7 @@ exports.patchUpdateRentalDates = async (req, res) => {
 
     const pricePerDay = carDetails.pricePerDay;
     const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 2; 
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
     const newPrice = diffDays * pricePerDay;
 
     rentalDetails.startDate = start;

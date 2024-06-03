@@ -30,8 +30,8 @@ exports.getTopRatedCars = async (req, res) => {
       },
       {
         $sort: {
-          count: -1, 
-          avgRating: -1 
+          avgRating: -1,
+          numOfRatings: -1
         }
       }
     ]);

@@ -48,7 +48,7 @@ exports.patchUpdateRental = async (req, res) => {
     
             const pricePerDay = carDetails.pricePerDay;
             const diffTime = Math.abs(end - start);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 2; 
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
             const newPrice = diffDays * pricePerDay;
         
             rentalDetails.startDate = start;
@@ -84,37 +84,6 @@ exports.patchUpdateRental = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
-
-exports.deleteRemoveRental = async (req, res) => {
-
-    const params = req.params;
-    const rentalId =  params.id;
-  
-    try {
-        const rentalDetails = await Rental.findById(rentalId);
-        if (!rentalDetails) {
-            return res.status(404).json({
-            message: "Rental not found"
-            });
-        }
-    
-        const carDetails = await Car.findById(rentalDetails.car);
-        const userDetails = await User.findById(rentalDetails.user);
-        
-        carDetails.rentals = carDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
-        await carDetails.save();
-    
-        userDetails.rentals = userDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
-        await userDetails.save();
-    
-        await Rental.deleteOne({ _id: rentalId });
-    
-        res.status(200).json({ message: "Rental removed successfully" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal server error" });
-    }
-  };
 
   exports.getCurrentRentals = async (req, res) => {
     const today = new Date();
@@ -152,7 +121,7 @@ exports.deleteRemoveRental = async (req, res) => {
         }
 
         const rentals = await Rental.find({
-            $or: [
+            $and: [
                 { startDate: { $lte: end }, endDate: { $gte: start } }
             ]
         })
