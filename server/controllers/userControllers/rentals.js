@@ -42,7 +42,7 @@ exports.postAddRental = async (req, res) => {
 
     const pricePerDay = carDetails.pricePerDay;
     const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 2; 
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
     const price = diffDays * pricePerDay;
     const rental = new Rental({
       car, 
@@ -137,7 +137,7 @@ exports.patchUpdateRentalDates = async (req, res) => {
 
     const pricePerDay = carDetails.pricePerDay;
     const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 2; 
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
     const newPrice = diffDays * pricePerDay;
 
     rentalDetails.startDate = start;
@@ -204,4 +204,30 @@ exports.deleteRemoveRental = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+exports.getUserRentalHistory = async (req, res) => {
+
+  const params = req.params; 
+  const userId = params.id;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+    res.status(200).json({
+      userId: userId,
+      rentalHistory: user.rentals
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Internal server error"
+    });
+  }
+};
+
 

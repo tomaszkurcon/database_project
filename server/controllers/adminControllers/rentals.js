@@ -48,7 +48,7 @@ exports.patchUpdateRental = async (req, res) => {
     
             const pricePerDay = carDetails.pricePerDay;
             const diffTime = Math.abs(end - start);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 2; 
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
             const newPrice = diffDays * pricePerDay;
         
             rentalDetails.startDate = start;
@@ -85,35 +85,97 @@ exports.patchUpdateRental = async (req, res) => {
     }
 };
 
-exports.deleteRemoveRental = async (req, res) => {
-
-    const params = req.params;
-    const rentalId =  params.id;
+  exports.getCurrentRentals = async (req, res) => {
+    const today = new Date();
   
     try {
-        const rentalDetails = await Rental.findById(rentalId);
-        if (!rentalDetails) {
-            return res.status(404).json({
-            message: "Rental not found"
-            });
+        const currentRentals = await Rental.find({
+            startDate: { $lte: today },
+            endDate: { $gte: today }
+        });
+  
+        if (currentRentals.length === 0) {
+            return res.status(200).json({ message: "No current rentals found" });
         }
-    
-        const carDetails = await Car.findById(rentalDetails.car);
-        const userDetails = await User.findById(rentalDetails.user);
-        
-        carDetails.rentals = carDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
-        await carDetails.save();
-    
-        userDetails.rentals = userDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
-        await userDetails.save();
-    
-        await Rental.deleteOne({ _id: rentalId });
-    
-        res.status(200).json({ message: "Rental removed successfully" });
+  
+        res.status(200).json(currentRentals);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Internal server error" });
     }
   };
   
+  exports.getRentalsByPeriod = async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Both start date and end date are required." });
+    }
+
+    try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (start >= end) {
+            return res.status(400).json({ message: "End date must be greater than start date." });
+        }
+
+        const rentals = await Rental.find({
+            $and: [
+                { startDate: { $lte: end }, endDate: { $gte: start } }
+            ]
+        })
+
+        if (rentals.length === 0) {
+            return res.status(200).json({ message: "No rentals found in the given period." });
+        }
+
+        res.status(200).json(rentals);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+exports.getPeriodIncome = async (req, res) => {
+    const { startDate, endDate } = req.query; 
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Both start date and end date are required in query parameters." });
+    }
+
+    try {
+       
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (start >= end) {
+            return res.status(400).json({ message: "End date must be greater than start date." });
+        }
+
+        const result = await Rental.aggregate([
+            {
+                $match: {
+                    startDate: { $gte: start },
+                    endDate: { $lte: end }
+                }
+            },
+            {
+                $group: {
+                    _id: null, 
+                    totalIncome: { $sum: "$price" }
+                }
+            }
+        ]);
+
+        if (result.length === 0 || !result[0].totalIncome) {
+            return res.status(404).json({ message: "No income found for the given period." });
+        }
+
+        res.status(200).json({ totalIncome: result[0].totalIncome });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
   
