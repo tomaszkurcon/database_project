@@ -20,6 +20,20 @@ exports.postUploadFile = async (req, res) => {
         return res.status(500).json({ error: "Could not upload file"});
     }
 }
+exports.postUploadManyFiles = async (req, res) => {
+    try {
+        const files = req.files;
+        const fileNames = [];
+        for (const file of files) {
+            const fileName = await uploadFile(file);
+            fileNames.push(fileName);
+        }
+        return res.status(200).json({ message: "Files uploaded successfully", fileNames });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ error: "Could not upload files" });
+    }
+}
 
 exports.deleteFile = async (req, res) => {
     const fileName = req.body.fileName;
