@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const rental = require("./rental");
+const Roles = require("../utils/roles");
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
   email: {
@@ -9,6 +9,11 @@ const userSchema = new Schema({
   password: {
     required: true,
     type: String,
+  },
+  roles: {
+    type: [String],
+    enum: [Roles.ADMIN, Roles.USER],
+    default: [Roles.USER]
   },
   rentals:  { 
     type: [
@@ -29,7 +34,7 @@ const userSchema = new Schema({
         price: {
           type: Number,
           required: true
-        }
+        },
       }
   ], 
   default: []

@@ -34,7 +34,7 @@ exports.postLogin = async (req, res) => {
     if (!isMatch) {
       return res.status(401).send({ error: "Invalid password" });
     }
-    const token = createAccessToken(user._id);
+    const token = createAccessToken(user._id, user.roles);
     res.status(200).send({ accessToken: token });
   } catch (err) {
     console.log(err);
