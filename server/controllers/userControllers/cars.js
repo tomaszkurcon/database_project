@@ -1,5 +1,20 @@
+const transformCarImagesToUrl = require("../../helpers/transformCarImagesToUrl");
 const Car = require("../../models/car");
 
+exports.getAllCars = async (req, res) => {
+  try {
+    const cars = await Car.find();
+    if (cars.length === 0) {
+      return res.status(404).json({ message: "No cars found" });
+    }
+
+    await transformCarImagesToUrl(cars);
+    res.status(200).json(cars);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
 exports.getTopRatedCars = async (req, res) => {
   try {
     const cars = await Car.aggregate([
@@ -39,7 +54,7 @@ exports.getTopRatedCars = async (req, res) => {
     if (cars.length === 0) {
       return res.status(404).json({ message: "No cars found" });
     }
-
+    await transformCarImagesToUrl(cars);
     res.status(200).json(cars);
   } catch (error) {
     console.error(error);
@@ -78,7 +93,7 @@ exports.getMostRentedCars = async (req, res) => {
       if (cars.length === 0) {
         return res.status(404).json({ message: "No cars found" });
       }
-  
+      await transformCarImagesToUrl(cars);
       res.status(200).json(cars);
     } catch (error) {
       console.error(error);
@@ -122,7 +137,7 @@ exports.getMostRentedCars = async (req, res) => {
       if (cars.length === 0) {
         return res.status(404).json({ message: "No cars found" });
       }
-  
+      await transformCarImagesToUrl(cars);
       res.status(200).json(cars);
     } catch (error) {
       console.error(error);
@@ -207,7 +222,7 @@ exports.getMostRentedCars = async (req, res) => {
         if (cars.length === 0) {
             return res.status(404).json({ message: "No cars found that match the filters." });
         }
-
+        await transformCarImagesToUrl(cars);
         res.status(200).json(cars);
     } catch (error) {
         console.error(error);
