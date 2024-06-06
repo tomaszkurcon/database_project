@@ -104,6 +104,9 @@ exports.deleteRemoveCar = async (req, res) => {
       return res.status(404).json({ message: "Car not found" });
     }
 
+    if(car.rentals.length > 0) {
+      return res.status(400).json({ message: "Car has reviews, cannot delete" });
+    }
     await Car.deleteOne({ _id: id });
 
     res.status(200).json({ message: "Car deleted successfully" });

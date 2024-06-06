@@ -36,7 +36,7 @@ exports.postUploadManyFiles = async (req, res) => {
 }
 
 exports.deleteFile = async (req, res) => {
-    const fileName = req.body.fileName;
+    const fileName = req.params.fileName;
     try {
         await deleteFile(fileName);
         return res.status(200).json({ message: "File deleted successfully"});
