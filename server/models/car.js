@@ -31,6 +31,10 @@ const carSchema = new Schema({
     minimum: 1,
     required: true
   },
+  images: {
+    type: [String],
+    default: []
+  },
   rentals:  { 
     type: [
       {

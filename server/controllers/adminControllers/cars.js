@@ -1,27 +1,40 @@
 const Car = require("../../models/car");
+const { uploadFile } = require("../../services/storageService");
 
 exports.postAddCar = async (req, res) => {
-  const { 
-    brand, 
-    model, 
-    pricePerDay, 
-    year, 
+  const {
+    brand,
+    model,
+    pricePerDay,
+    year,
     color,
     fuelType,
     quantity,
     rentals,
-    ratings  
-    } = req.body;
+    ratings,
+  } = req.body;
+  const images = [];
+  try {
+    const files = req.files;
+    for (const file of files) {
+      const fileName = await uploadFile(file);
+      images.push(fileName);
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
   const car = new Car({
-    brand, 
-    model, 
-    pricePerDay, 
-    year, 
+    brand,
+    model,
+    pricePerDay,
+    year,
     color,
     fuelType,
     quantity,
     rentals,
-    ratings
+    ratings,
+    images
   });
   try {
     await car.save();
@@ -35,17 +48,27 @@ exports.postAddCar = async (req, res) => {
 exports.patchUpdateCar = async (req, res) => {
   const {
     id,
-    brand, 
-    model, 
-    pricePerDay, 
-    year, 
+    brand,
+    model,
+    pricePerDay,
+    year,
     color,
     fuelType,
     quantity,
     rentals,
-    ratings
+    ratings,
   } = req.body;
-
+  const images = [];
+  try {
+    const files = req.files;
+    for (const file of files) {
+      const fileName = await uploadFile(file);
+      images.push(fileName);
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
   try {
     const car = await Car.findById(id);
     if (!car) {
@@ -61,8 +84,8 @@ exports.patchUpdateCar = async (req, res) => {
     if (quantity) car.quantity = quantity;
     if (rentals) car.rentals = rentals;
     if (ratings) car.ratings = ratings;
-
-    await car.save(); 
+    if (images) car.images = images;
+    await car.save();
 
     res.status(200).json({ message: "Car updated successfully" });
   } catch (error) {
@@ -72,7 +95,7 @@ exports.patchUpdateCar = async (req, res) => {
 };
 
 exports.deleteRemoveCar = async (req, res) => {
-  const { id } = req.params; 
+  const { id } = req.params;
 
   try {
     const car = await Car.findById(id);
@@ -89,5 +112,3 @@ exports.deleteRemoveCar = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
