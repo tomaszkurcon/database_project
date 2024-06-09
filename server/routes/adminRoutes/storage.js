@@ -14,5 +14,5 @@ router.post(
   multer().array("files", 10),
   storageController.postUploadManyFiles
 );
-router.delete("/delete", storageController.deleteFile);
+router.delete("/delete/:fileName", storageController.deleteFile);
 module.exports = router;

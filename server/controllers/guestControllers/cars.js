@@ -40,7 +40,8 @@ exports.getTopRatedCars = async (req, res) => {
           year: { $first: "$year" },
           color: { $first: "$color" },
           fuelType: { $first: "$fuelType" },
-          quantity: { $first: "$quantity" }
+          quantity: { $first: "$quantity" },
+          images: { $first: "$images" }
         }
       },
       {
@@ -54,6 +55,7 @@ exports.getTopRatedCars = async (req, res) => {
     if (cars.length === 0) {
       return res.status(404).json({ message: "No cars found" });
     }
+    console.log(cars)
     await transformCarImagesToUrl(cars);
     res.status(200).json(cars);
   } catch (error) {
@@ -85,7 +87,8 @@ exports.getMostRentedCars = async (req, res) => {
             color: 1, 
             fuelType: 1, 
             quantity: 1,
-            rentalCount: 1
+            rentalCount: 1,
+            images: 1
           }
         }
       ]);
@@ -129,7 +132,8 @@ exports.getMostRentedCars = async (req, res) => {
             year: 1, 
             color: 1, 
             fuelType: 1, 
-            quantity: 1
+            quantity: 1,
+            images: 1
           }
         }
       ]);
@@ -216,7 +220,7 @@ exports.getMostRentedCars = async (req, res) => {
                     }
                 }
             },
-            { $project: { brand: 1, model: 1, pricePerDay: 1, year: 1, color: 1, fuelType: 1, quantity: 1, numberOfRented: 1 } }
+            { $project: { brand: 1, model: 1, pricePerDay: 1, year: 1, color: 1, fuelType: 1, quantity: 1, numberOfRented: 1, images:1 } }
         ]);
 
         if (cars.length === 0) {
