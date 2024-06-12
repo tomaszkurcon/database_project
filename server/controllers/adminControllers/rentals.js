@@ -178,4 +178,124 @@ exports.getPeriodIncome = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
-  
+
+exports.getYearlyIncomeReport = async (req, res) => {
+    const { year } = req.query;
+
+    if (!year) {
+        return res.status(400).json({ message: "Year is required in query parameters." });
+    }
+
+    const yearStart = new Date(`${year}-01-01`);
+    const yearEnd = new Date(`${year}-12-31`);
+
+    try {
+        const result = await Rental.aggregate([
+            {
+                $match: {
+                    startDate: { $gte: yearStart },
+                    endDate: { $lte: yearEnd }
+                }
+            },
+            {
+                $group: {
+                    _id: { 
+                        month: { $month: "$startDate" } 
+                    },
+                    totalIncome: { $sum: "$price" }
+                }
+            },
+            {
+                $sort: {
+                    "_id.month": 1
+                }
+            }
+        ]);
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: "No income found for the given year." });
+        }
+
+        const monthlyIncome = result.map(item => ({
+            month: item._id.month,
+            income: item.totalIncome
+        }));
+
+        const response = {
+            reportTitle: `Yearly Income for ${year}`,
+            data: monthlyIncome
+        };
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+exports.getYearlyIncomePerCarReport = async (req, res) => {
+    const { year } = req.query;
+
+    if (!year) {
+        return res.status(400).json({ message: "Year is required in query parameters." });
+    }
+
+    const yearStart = new Date(`${year}-01-01`);
+    const yearEnd = new Date(`${year}-12-31`);
+
+    try {
+        const result = await Rental.aggregate([
+            {
+                $match: {
+                    startDate: { $gte: yearStart },
+                    endDate: { $lte: yearEnd }
+                }
+            },
+            {
+                $group: {
+                    _id: "$car",
+                    totalIncome: { $sum: "$price" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "cars",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "carDetails"
+                }
+            },
+            {
+                $unwind: "$carDetails"
+            },
+            {
+                $project: {
+                    _id: 0,
+                    brand: "$carDetails.brand",
+                    model: "$carDetails.model",
+                    year: "$carDetails.year",
+                    totalIncome: 1
+                }
+            },
+            {
+                $sort: {
+                    totalIncome: -1
+                }
+            }
+        ]);
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: "No income found for the given year." });
+        }
+
+        const response = {
+            reportTitle: `Yearly Income Per Car for ${year}`,
+            data: result
+        };
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};

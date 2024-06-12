@@ -33,6 +33,7 @@ const carSchema = new Schema({
   },
   images: {
     type: [String],
+    required: true,
     default: []
   },
   rentals:  { 
