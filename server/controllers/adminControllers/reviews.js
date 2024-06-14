@@ -1,30 +1,38 @@
+const mongoose = require('mongoose');
 const Car = require("../../models/car");
 const Review = require("../../models/review");
 
 exports.deleteRemoveReview = async (req, res) => {
-    const params = req.params;
-    const reviewId = params.id;
-
+    const reviewId = req.params.id;
+    const session = await mongoose.startSession();
+  
     try {
-      
-        const reviewDetails = await Review.findById(reviewId);
+      await session.withTransaction(async () => {
+        const reviewDetails = await Review.findById(reviewId).session(session);
         if (!reviewDetails) {
-            return res.status(404).json({ message: "Review not found" });
+          throw { statusCode: 404, message: "Review not found" };
         }
-        const car = reviewDetails.car;
-        await Review.deleteOne({ _id: reviewId });
-
-        const carDetails = await Car.findById(car);
-        if (!carDetails) {
-            return res.status(200).json({ message: "Car not found, but review deleted from reviews" });
+  
+        const carId = reviewDetails.car;
+  
+        await Review.deleteOne({ _id: reviewId }).session(session);
+  
+        const carDetails = await Car.findById(carId).session(session);
+        if (carDetails) {
+          carDetails.reviews = carDetails.reviews.filter(review => review.toString() !== reviewId);
+          await carDetails.save({ session });
         }
-
-        carDetails.reviews = carDetails.reviews.filter(review => review.reviewId.toString() !== reviewId);
-        await carDetails.save();
-
+  
         res.status(200).json({ message: "Review deleted successfully" });
+      });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal server error" });
+      console.error(error);
+  
+      const statusCode = error.statusCode || 500;
+      const errorMessage = error.message || "Internal server error";
+  
+      res.status(statusCode).json({ error: errorMessage });
+    } finally {
+      session.endSession();
     }
-};
+  };

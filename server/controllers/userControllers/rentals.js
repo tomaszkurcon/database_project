@@ -1,30 +1,38 @@
 const Rental = require("../../models/rental");
 const Car = require("../../models/car");
 const User = require("../../models/user");
+const { mongoose } = require("mongoose");
 
 exports.postAddRental = async (req, res) => {
   const { car, startDate, endDate, user, paid } = req.body;
-
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    const carDetails = await Car.findById(car);
+    const carDetails = await Car.findById(car).session(session);
     if (!carDetails) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({
         message: "Car not found"
       });
     }
 
-    const userDetails = await User.findById(user);
+    const userDetails = await User.findById(user).session(session);
     if (!userDetails) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({
         message: "User not found"
       });
     }
 
     if(start >= end){
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         message: "End date should be greater than start date."
       });
@@ -35,6 +43,8 @@ exports.postAddRental = async (req, res) => {
     });
 
     if (overlappingRentals.length >= carDetails.quantity) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         message: "Car is already rented for the requested dates."
       });
@@ -52,29 +62,32 @@ exports.postAddRental = async (req, res) => {
       price, 
       paid
     });
-    await rental.save();
+    await rental.save({ session });
 
     carDetails.rentals.push({
       rentalId: rental._id,
       startDate,
       endDate
     });
-    await carDetails.save();
-    
+    await carDetails.save({ session });
     userDetails.rentals.push({
       rentalId: rental._id,
       startDate,
       endDate,
       price
     });
-    await userDetails.save();
-
+    await userDetails.save({ session });
+    await session.commitTransaction();
+    session.endSession();
     res.status(201).json({ message: "Rental added successfully" });
   } catch (error) {
     console.error(error);
+    await session.abortTransaction();
+    session.endSession();
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 exports.patchUpdateRentalPaidStatus = async (req, res) => {
   const { rentalId } = req.body;
@@ -88,7 +101,7 @@ exports.patchUpdateRentalPaidStatus = async (req, res) => {
 
       rental.paid = true;
       await rental.save();
-
+      
       res.status(200).json({
           message: "Rental paid status updated successfully"
       });
@@ -100,108 +113,123 @@ exports.patchUpdateRentalPaidStatus = async (req, res) => {
 
 exports.patchUpdateRentalDates = async (req, res) => {
   const { rentalId, newStartDate, newEndDate } = req.body;
-
+  const session = await mongoose.startSession();
   try {
-    const rentalDetails = await Rental.findById(rentalId);
-    if (!rentalDetails) {
-      return res.status(404).json({ message: "Rental not found" });
-    }
-
-    const carDetails = await Car.findById(rentalDetails.car._id);
-    if (!carDetails) {
-      return res.status(404).json({ message: "Car not found" });
-    }
-
-    const userDetails = await User.findById(rentalDetails.user);
-
-    const start = new Date(newStartDate);
-    const end = new Date(newEndDate);
+    await session.withTransaction(async () => {
+      const rentalDetails = await Rental.findById(rentalId).session(session);
     
-    if(rentalDetails.paid === true){
-      return res.status(400).json({ message: "Cannot update dates for a paid rental." });
-    }
+      if (!rentalDetails) {
+        throw { statusCode: 404, message: "Rental not found" };
+      }
 
-    if (start >= end) {
-      return res.status(400).json({ message: "End date should be greater than start date." });
-    }
+      const carDetails = await Car.findById(rentalDetails.car._id).session(session);
+      if (!carDetails) {
+        throw { statusCode: 404, message: "Car not found" };
+      }
 
-    const overlappingRentals = carDetails.rentals.filter((rental) => {
-      return start <= rental.endDate && end >= rental.startDate && rental.rentalId.toString() !== rentalId;
-    });
+      const userDetails = await User.findById(rentalDetails.user).session(session);
 
-    if (overlappingRentals.length >= carDetails.quantity) {
-      return res.status(400).json({
-        message: "Car is already rented for the requested dates."
+      const start = new Date(newStartDate);
+      const end = new Date(newEndDate);
+      
+      if (rentalDetails.paid === true) {
+        throw { statusCode: 400, message: "Cannot update dates for a paid rental." };
+      }
+
+      if (start >= end) {
+        throw { statusCode: 400, message: "End date should be greater than start date." };
+      }
+
+      const overlappingRentals = carDetails.rentals.filter((rental) => {
+        return start <= rental.endDate && end >= rental.startDate && rental.rentalId.toString() !== rentalId;
       });
-    }
 
-    const pricePerDay = carDetails.pricePerDay;
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-    const newPrice = diffDays * pricePerDay;
+      if (overlappingRentals.length >= carDetails.quantity) {
+        throw { statusCode: 400, message: "Car is already rented for the requested dates." };
+      }
 
-    rentalDetails.startDate = start;
-    rentalDetails.endDate = end;
-    rentalDetails.price = newPrice;
-    await rentalDetails.save();
+      const pricePerDay = carDetails.pricePerDay;
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+      const newPrice = diffDays * pricePerDay;
 
-    carDetails.rentals = carDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalDetails._id.toString());
-    carDetails.rentals.push({
-      rentalId: rentalId,
-      startDate: start,
-      endDate: end
-    });
-    await carDetails.save();
+      rentalDetails.startDate = start;
+      rentalDetails.endDate = end;
+      rentalDetails.price = newPrice;
+      await rentalDetails.save({ session });
 
-    userDetails.rentals = userDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalDetails._id.toString());
-    userDetails.rentals.push({
-      rentalId: rentalId,
-      startDate: start,
-      endDate: end,
-      price: newPrice
-    });
-    await userDetails.save();
+      carDetails.rentals = carDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalDetails._id.toString());
+      carDetails.rentals.push({
+        rentalId,
+        startDate: start,
+        endDate: end
+      });
+      await carDetails.save({ session });
 
-    res.status(200).json({
-      message: "Rental updated successfully",
-      newStartDate: start,
-      newEndDate: end,
-      newPrice: newPrice
+      userDetails.rentals = userDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalDetails._id.toString());
+      userDetails.rentals.push({
+        rentalId,
+        startDate: start,
+        endDate: end,
+        price: newPrice
+      });
+      await userDetails.save({ session });
+
+      res.status(200).json({
+        message: "Rental updated successfully",
+        newStartDate: start,
+        newEndDate: end,
+        newPrice
+      });
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+
+    const statusCode = error.statusCode || 500;
+    const errorMessage = error.message || "Internal server error";
+
+    res.status(statusCode).json({ error: errorMessage });
+  } finally {
+    session.endSession();
   }
 };
 
 exports.deleteRemoveRental = async (req, res) => {
-
-  const params = req.params;
-  const rentalId =  params.id;
+  const rentalId = req.params.id;
+  const session = await mongoose.startSession();
 
   try {
-    const rentalDetails = await Rental.findById(rentalId);
-    if (!rentalDetails) {
-      return res.status(404).json({
-        message: "Rental not found"
-      });
-    }
+    await session.withTransaction(async () => {
+      const rentalDetails = await Rental.findById(rentalId).session(session);
+      if (!rentalDetails) {
+        throw { statusCode: 404, message: "Rental not found" };
+      }
 
-    const carDetails = await Car.findById(rentalDetails.car);
-    const userDetails = await User.findById(rentalDetails.user);
-  
-    carDetails.rentals = carDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
-    await carDetails.save();
+      const carDetails = await Car.findById(rentalDetails.car).session(session);
+      if (!carDetails) {
+        throw { statusCode: 404, message: "Car not found" };
+      }
 
-    userDetails.rentals = userDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
-    await userDetails.save();
+      const userDetails = await User.findById(rentalDetails.user).session(session);
+      
+      carDetails.rentals = carDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
+      await carDetails.save({ session });
 
-    await Rental.deleteOne({ _id: rentalId });
+      userDetails.rentals = userDetails.rentals.filter(rental => rental.rentalId.toString() !== rentalId);
+      await userDetails.save({ session });
+      await Rental.deleteOne({ _id: rentalId }).session(session);
 
-    res.status(200).json({ message: "Rental removed successfully" });
+      res.status(200).json({ message: "Rental removed successfully" });
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+
+    const statusCode = error.statusCode || 500;
+    const errorMessage = error.message || "Internal server error";
+
+    res.status(statusCode).json({ error: errorMessage });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -219,7 +247,7 @@ exports.getUserRentalHistory = async (req, res) => {
       });
     }
     res.status(200).json({
-      userId: userId,
+      userId,
       rentalHistory: user.rentals
     });
   } catch (error) {

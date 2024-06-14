@@ -24,5 +24,6 @@ module.exports = {
   rules: {
     quotes: 'off',
     "no-unused-vars": 'warn',
+    "no-throw-literal": 'off',
   }
 };
