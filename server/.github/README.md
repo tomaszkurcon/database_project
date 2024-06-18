@@ -89,8 +89,8 @@ Każdy user przechowuje podstawowe informacje o swoich wynajmach w celu łatwego
   "rentals": [
     {
       "rentalId": { "$oid": "666be7678cd60b1e1e713086" },
-      "startDate": { "$date": { "$numberLong": "1731283200000" } },
-      "endDate": { "$date": { "$numberLong": "1731715200000" } },
+      "startDate": { "$date": "2024-06-18T09:29:54.454+00:00" },
+      "endDate": { "$date": "2024-06-19T09:29:54.454+00:00" },
       "_id": { "$oid": "666be7678cd60b1e1e713088" }
     }
   ]
@@ -131,8 +131,8 @@ Każdy samochód przechowuje daty swoich wynajmów. Jest to szczególnie istotne
   "rentals": [
     {
       "rentalId": { "$oid": "666be7678cd60b1e1e713086" },
-      "startDate": { "$date": { "$numberLong": "1731283200000" } },
-      "endDate": { "$date": { "$numberLong": "1731715200000" } },
+      "startDate": { "$date": "2024-06-18T09:29:54.454+00:00" },
+      "endDate": { "$date": "2024-06-19T09:29:54.454+00:00" },
       "_id": { "$oid": "666be7678cd60b1e1e713088" }
     }
   ],
@@ -167,12 +167,12 @@ Pola:
   "_id": { "$oid": "666be7678cd60b1e1e713086" },
   "user": { "$oid": "66532b027995bdde6e23768f" },
   "car": { "$oid": "666570528f5eed94a75aa3a6" },
-  "startDate": { "$date": { "$numberLong": "1731283200000" } },
-  "endDate": { "$date": { "$numberLong": "1731715200000" } },
+  "startDate": { "$date": "2024-06-18T09:29:54.454+00:00" },
+  "endDate": { "$date": "2024-06-20T09:29:54.454+00:00" },
   "price": { "$numberInt": "18000" },
   "paid": false,
-  "createdAt": { "$date": { "$numberLong": "1718347623358" } },
-  "updatedAt": { "$date": { "$numberLong": "1718347623358" } }
+  "createdAt": { "$date": "2024-06-18T09:29:54.454+00:00" },
+  "updatedAt": { "$date": "2024-06-18T09:29:54.454+00:00" }
 }
 ```
 ---
@@ -193,8 +193,8 @@ Pola:
   "user": { "$oid": "66532b027995bdde6e23768f" },
   "description": "Very fast car, but uncomfortable!",
   "rating": { "$numberInt": "4" },
-  "createdAt": { "$date": { "$numberLong": "1717270068385" } },
-  "updatedAt": { "$date": { "$numberLong": "1717270068385" } }
+  "createdAt": { "$date": "2024-06-18T09:29:54.454+00:00" },
+  "updatedAt": { "$date": "2024-06-18T09:29:54.454+00:00" }
 }
 ```
 
