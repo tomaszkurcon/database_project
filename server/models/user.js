@@ -3,8 +3,15 @@ const Roles = require("../utils/roles");
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
   email: {
-    required: true,
+    required: [true, "Email is required"],
+    unique: true,
     type: String,
+    validate: {
+      validator: function (v) {
+        return /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/.test(v);
+      },
+      message: (props) => `${props.value} is not a valid email!`,
+    },
   },
   password: {
     required: true,

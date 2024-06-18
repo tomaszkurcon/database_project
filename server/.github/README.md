@@ -1,24 +1,25 @@
-# Contributors:
+# Autorzy:
 
 - Helena Szczepanowska
 - Tomasz Kurcoń
 
-# Project name: Car rental
+# Nazwa projektu: Wypożyczalnia samochodów 🚗
 
-# Used technologies:
+# Technologie 🚀:
 
-- MongoDB, Mongoose
+- MongoDB, Mongoose,
 - Node.js with Express.js,
-- Postman
-- Firebase Storage
+- Postman,
+- Firebase,
+- faker.
 
-# API Documentation
-
+# Dokumentacja API 📃
 https://documenter.getpostman.com/view/34873190/2sA3XJjQ83#30f48e74-74fd-4d8e-8eb0-c3356289866c
 
-# Project Documentation PL
+Powyższy link prowadzi do dokumentacji na hostingu Postmana. Widoczne tam są wszystkie stworzone endpointy, wraz z krótkimi opisami oraz przykładowymi requestami zapisanymi w formacie cURL.
+# Dokumentacja projektu 📖
 
-Projekt „Car Rental” automatyzuje proces wynajmu samochodów, umożliwiając klientom łatwe przeglądanie dostępnych modeli według różnych kryteriów oraz dokonywanie rezerwacji na konkretny termin. Dodatkowo system pozwala na wystawianie opinii widocznych dla innych użytkowników.
+Projekt „Wypożyczalnia samochodów” automatyzuje proces wynajmu samochodów, umożliwiając klientom łatwe przeglądanie dostępnych modeli według różnych kryteriów oraz dokonywanie rezerwacji na konkretny termin. Dodatkowo system pozwala na wystawianie opinii widocznych dla innych użytkowników.
 
 Do realizacji projektu wykorzystana została technologia Mongoose, będąca ODM (Object Data Modeling) dla MongoDB, która oferuje prostą, opartą na schematach metodę modelowania danych aplikacji, w której każdy stworzony schemat jest mapowany do kolekcji i definiuje strukturę jej dokumentów, zapewniając walidację danych.
 
@@ -63,7 +64,7 @@ Filtry:
 
 ## Kolekcje i przykładowe dokumenty
 
-Poniżej przedstawione zostały opisy dokumentów w każdej z kolecji oraz ich przykłady.
+Poniżej przedstawione zostały opisy dokumentów w każdej z kolekcji oraz ich przykłady.
 
 ### Users
 
@@ -208,11 +209,25 @@ Schematy umożliwiają:
 ```js
 type: String;
 ```
+- wprowadzanie bardziej skomplikowanej walidacji, na przykład sprawdzanie poprawności e-maila przy użyciu Regexpa: 
+```js
+ validate: {
+      validator: function (v) {
+        return /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/.test(v);
+      },
+      message: (props) => `${props.value} is not a valid email!`,
+    },
+  }
+```
 
 - ustawianie wymaganych pól:
 
 ```js
 required: true;
+```
+Możemy również ustawić treść błędu, jeżeli coś z schematu nie zostanie spełnione:
+```js
+required: [true, "Email is required"],
 ```
 
 - wstawianie domyślnych wartości pól:
@@ -276,10 +291,20 @@ const Roles = {
 ```
 
 ```js
+const mongoose = require("mongoose");
+const Roles = require("../utils/roles");
+const Schema = mongoose.Schema;
 const userSchema = new Schema({
   email: {
-    required: true,
+    required: [true, "Email is required"],
+    unique: true,
     type: String,
+    validate: {
+      validator: function (v) {
+        return /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/.test(v);
+      },
+      message: (props) => `${props.value} is not a valid email!`,
+    },
   },
   password: {
     required: true,
@@ -288,32 +313,32 @@ const userSchema = new Schema({
   roles: {
     type: [String],
     enum: [Roles.ADMIN, Roles.USER],
-    default: [Roles.USER],
+    default: [Roles.USER]
   },
-  rentals: {
+  rentals:  { 
     type: [
       {
         rentalId: {
           type: Schema.Types.ObjectId,
           ref: "Rental",
-          required: true,
+          required: true
         },
         startDate: {
           type: Date,
-          required: true,
+          required: true
         },
         endDate: {
           type: Date,
-          required: true,
+          required: true
         },
         price: {
           type: Number,
-          required: true,
+          required: true
         },
-      },
-    ],
-    default: [],
-  },
+      }
+  ], 
+  default: []
+  }
 });
 
 module.exports = mongoose.model("User", userSchema);
@@ -487,6 +512,12 @@ module.exports = mongoose.model("Review", reviewSchema);
 
 Pole `_id` jest automatycznie dodawane do tworzonych schematów.
 
+
+## Walidacja danych na podstawie schematów
+
+Mongoose dokona walidacji danych za każdym razem, kiedy będziemy dodawać lub zmieniać dokument. Jeżeli dane nie będą zgodne z schematem, to otrzymamy błąd, a operacja na bazie danych się nie wykona. Dzięki temu możemy zapewnić sobie, że dane przechowywane w bazie będą sensowne. Poniżej wykonana została próba dodania użytkownika z niepoprawnym adresem e-mail.
+<br></br>
+![](./images/validation_error.png)
 ## Autentykacja i autoryzacja
 
 W naszym systemie możemy wyróżnić 3 różne role:
@@ -540,7 +571,7 @@ const authorizeRole = (roles) => {
 ### Dodawanie samochodu do oferty
 
 `/admin/car/add`
-
+Aby dodać nowy samochód, tworzymy instancję naszego modelu `car` podając odpowiednie dane. Aby następnie dodać dokument do bazy danych, wystarczy wywołać asynchroniczną metodę, którą implementuje Mongoose: `car.save()`.
 ```js
 exports.postAddCar = async (req, res) => {
   const {
@@ -585,14 +616,35 @@ exports.postAddCar = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-```
-
+``` 
 ### Wynajem samochodu
 
 `/user/rental/add`
 
 Przy każdej próbie wynajmu samochodu sprawdzana jest dostępna ilość tego modelu w podanym terminie i tylko wtedy, gdy jest przynajmniej jeden dostępny samochód wynajem przebiega pomyślnie. Dodatkowo niektóre dane wynajmu dodawane są również do kolekcji `Users` oraz `Cars`.
-
+Operacja dodawania wynajmu ma charakter transakcyjny. Aby rozpocząć transakcje korzystając z Mongoose, dodaliśmy następujący fragment kodu:
+```js
+const session = await mongoose.startSession();
+session.startTransaction();
+```
+Następnie przy wykonywaniu każdej operacji na bazie danych, podawaliśmy utworzoną sesję:
+```js
+Car.findById(car).session(session);
+```
+lub
+```js
+await rental.save({ session });
+```
+Jeżeli któraś z operacji się nie powiodła to przerywaliśmy transakcje i cofane zostały wszystkie pozostałe:
+```js
+await session.abortTransaction();
+session.endSession();
+```
+Jeżeli natomiast wszystkie operacje się powiodły, to zatwierdzaliśmy transakcje i zmiany dokonywały się w bazie:
+```js
+await session.commitTransaction();
+session.endSession();
+```
 ```js
 exports.postAddRental = async (req, res) => {
   const { car, startDate, endDate, user, paid } = req.body;
@@ -683,7 +735,11 @@ exports.postAddRental = async (req, res) => {
 ### Dodawanie opinii
 
 `/user/review/add`
-
+Przy dodawaniu opinii również wykorzystaliśmy transakcje, jednak tym razem w inny sposób. Ponownie stworzyliśmy nową sesję i na niej wywołaliśmy metodę `withTransaction`:
+```js
+await session.withTransaction(async ()=>{})
+```
+Ta metoda upraszcza nam proces wykonywania operacji w ramach transakcji, ponieważ automatycznie zarządza jej cyklem życia. Przekazujemy do niej funkcje, w której wykonujemy operacje na bazie danych. Transakcja jest automatycznie rozpoczynana. Jeżeli funkcja w którymś momencie rzuci błąd, to automatycznie jest odrzucana, a w przeciwnym wypadku - zatwierdzana. Dzięki temu otrzymujemy wygodniejsze i krótsze rozwiązanie.
 ```js
 exports.postAddReview = async (req, res) => {
     const { car, user, description, rating } = req.body;
@@ -732,7 +788,7 @@ exports.postAddReview = async (req, res) => {
 `/user/rental/update`
 
 Użytkownik może zmienić datę swojego wynajmu tylko wtedy, gdy nie jest jeszcze opłacony oraz gdy wynajmowany samochód jest dostępny w nowo wybranym terminie.
-
+Dane wyszukiwane są w kolekcji przy użyciu metody `findById` do której podajemy `id` dokumentu, który chcemy otrzymać.
 ```js
 exports.patchUpdateRentalDates = async (req, res) => {
   const { rentalId, newStartDate, newEndDate } = req.body;
@@ -821,7 +877,7 @@ exports.patchUpdateRentalDates = async (req, res) => {
 ### Zmiana statusu płatności
 
 `/user/rental/pay`
-
+Aby zmienić już istniejący dokument, wystarczy wydobyć go z bazy danych, zmienić go jak zwykły obiekt Javascript, a następnie wykonać na nim tą samą metodę jak przy dodawaniu nowego dokumentu, czyli `.save()`.
 ```js
 exports.patchUpdateRentalPaidStatus = async (req, res) => {
   const { rentalId } = req.body;
@@ -927,7 +983,10 @@ exports.getUserRentalHistory = async (req, res) => {
 ### Raport rocznego przychodu z podziałem na miesiące
 
 `/admin/rental/yearly-income?year={year}`
-
+Wykorzystujemy tutaj metodę `aggregate`, która umożliwia nam przetwarzanie wielu dokumentów i zwracanie odpowiednich danych. W tym celu wykorzystane zostały dodatkowo odpowiednie operatory:
+- `$match` - filtruje wynajmy według daty rozpoczęcia i zakończenia, pozostawiając tylko te w określonym zakresie,
+- `$group` - grupuje wyniki po miesiącu rozpoczęcia wynajmu i sumuje przychody z każdego miesiąca,
+- `$sort` - sortuje wyniki według miesiąca, od najwcześniejszego do najpóźniejszego.
 ```js
 exports.getYearlyIncomeReport = async (req, res) => {
     const { year } = req.query;
@@ -983,11 +1042,16 @@ exports.getYearlyIncomeReport = async (req, res) => {
     }
 };
 ```
-
+![](./images/yearly_income_report.png)
 ### Raport rocznego przychodu z podziałem na samochody
 
 `/admin/rental/car-income?year={year}`
 
+Aby uzyskać przychód dla każdego samochodu, musimy odwołać się do kolekcji `Rentals` oraz `Cars`.  Wypożyczenie przechowuje `id` samochodu. Aby otrzymać informacje o tym samochodzie, wykorzystujemy operator `$lookup`, który łączy dane z kolekcji `Rentals` z kolekcją `Cars`.
+
+W wyniku `$lookup`, pole carDetails jest tablicą (nawet jeśli zawiera tylko jeden element). Operator `$unwind` przekształca tę tablicę w pojedynczy dokument, co ułatwia dalsze przetwarzanie.
+
+Natomiast operator `$project` umożliwia określenie, które pola mają zostać wybrane do wynikowego dokumentu.
 ```js
 exports.getYearlyIncomePerCarReport = async (req, res) => {
     const { year } = req.query;
@@ -1056,12 +1120,16 @@ exports.getYearlyIncomePerCarReport = async (req, res) => {
     }
 };
 ```
-
+![](./images/car_income_report.png)
 ## Sortowanie i filtrowanie samochodów
 
 ### Sortowanie według średniej ocen
-
 `/guest/car/top-rated`
+
+Liczbę ocen samochodu możemy uzyskać sprawdzając długość listy operatorem `$size`. Następnie możemy dodać nowe pole `reviewCount` do zwracanych dokumentów, przy użyciu operatora `$addFields`. Wykorzystane zostały jeszcze inne operatory:
+- `$avg` - oblicza średnią wartość pola dla każdej grupy,
+- `$first` -  zwraca pierwszy element z grupy dokumentów dla określonego pola,
+- `$sort` - umożliwia sortowanie po różnych polach oraz w różnej kolejności.
 
 ```js
 exports.getTopRatedCars = async (req, res) => {
@@ -1118,6 +1186,12 @@ exports.getTopRatedCars = async (req, res) => {
 
 `guest/car/filter?brand={brand}&priceMin={priceMin}&priceMax={priceMax}&startDate={startDate}&endDate={endDate}&yearMin{yearMin}&yearMax={yearMax}&color={color}&fuelType={fuelType}`
 
+Wykorzystane operatory:
+- `$in` - sprawdza, czy wartość pola znajduje się w określonej tablicy wartości. W tym przypadku używany do filtrowania samochodów na podstawie marki, koloru i rodzaju paliwa,
+- `$lte` - operator porównania, który sprawdza, czy wartość pola jest mniejsza lub równa określonej wartości. Wykorzystywany do filtrowania samochodów na podstawie maksymalnej ceny za dzień i maksymalnego roku produkcji,
+- `$gte` - operator porównania, który sprawdza, czy wartość pola jest większa lub równa określonej wartości. Wykorzystywany do filtrowania samochodów na podstawie minimalnej ceny za dzień i minimalnego roku produkcji,
+- `$filter` - operator używany do filtrowania elementów tablicy na podstawie warunku. W tym przypadku, używany do filtrowania wynajmów samochodów, które nakładają się z określonym zakresem dat,
+- `$and` -  operator logiczny, który zwraca prawdę, jeśli wszystkie wyrażenia w tablicy są prawdziwe. Używany w kontekście $filter do sprawdzenia, czy wynajem samochodu mieści się w określonym zakresie dat.
 ```js
 exports.getFilteredCars = async (req, res) => {
   const { brand, priceMin, priceMax, startDate, endDate, yearMin, yearMax, color, fuelType } = req.query;
@@ -1204,7 +1278,7 @@ exports.getFilteredCars = async (req, res) => {
   }
 };
 ```
-
+![](./images/filter_cars.png)
 ## Połączenie z serwisem Firebase
 
 W projekcie wykorzystaliśmy Firebase Storage w którym przechowywujemy pliki (zdjęcia samochodów). W bazie danych zapisujemy natomiast tylko nazwy plików.
@@ -1323,4 +1397,39 @@ const transformCarImagesToUrl = async (cars) => {
 const cars = await Car.find();
 await transformCarImagesToUrl(cars);
 res.status(200).json(cars);
+```
+
+## Generowanie przykładowych danych i wstawianie ich do bazy danych
+W celu wygenerowania przykładowych danych, wykorzystana została biblioteka `faker`. W przypadku kolekcji `Users` oraz `Cars` tworzone są listy odpowiednich obiektów zgodnie z schematami Mongoose, a następnie wstawiane do bazy za pomocą funkcji `inserMany()`. Jeżeli chodzi o dodawanie wypożyczeń i opinii, to generowane są odpowiednie dane, które wstawiamy do "imitowanego" requesta, aby móc wykorzystać stworzone controllery zapewniając tym samym całą logikę przy dodawaniu dokumentów do kolekcji `Rentals` i `Reviews`.
+
+Aby otrzymać przykładowe samochody oraz użytkowników, wykorzystywany jest operator `$sample`.
+```js
+    const users = await User.aggregate([{ $sample: { size: num } }]);
+    const cars = await Car.aggregate([{ $sample: { size: num } }]);
+    for (let i = 0; i < num; i++) {
+      const rand = Math.floor(Math.random() * 2);
+      const startDate = rand === 0 ? faker.date.past() : faker.date.future();
+      const endDate = faker.date.soon({
+        days: Math.floor(Math.random() * 180 + 1),
+        refDate: startDate,
+      });
+      const req = {
+        body: {
+          car: cars[i % cars.length]._id,
+          startDate,
+          endDate,
+          user: users[i % users.length]._id,
+          paid: faker.datatype.boolean(),
+        },
+      };
+      const res = {
+        status: () => res,
+        json: () => res,
+      };
+      await postAddRental(req, res);
+    }
+```
+Stworzona została funkcja `generateData`, która jako pierwszy parametr przyjmuje obiekt konfiguracyjny, mówiący ile danych dokumentów ma zostać wygenerowanych. Drugi parametr natomiast to `boolean`, który ustawiony na `true`, przed wygenerowaniem i dodaniem nowych dokumentów do bazy, usunie wszystkie, które się już w niej znajdują. 
+```js
+generateData({ users: 10, cars: 10, rentals: 10, reviews: 10 }, true);
 ```
