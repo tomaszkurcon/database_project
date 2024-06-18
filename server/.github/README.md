@@ -571,6 +571,7 @@ const authorizeRole = (roles) => {
 ### Dodawanie samochodu do oferty
 
 `/admin/car/add`
+
 Aby dodać nowy samochód, tworzymy instancję naszego modelu `car` podając odpowiednie dane. Aby następnie dodać dokument do bazy danych, wystarczy wywołać asynchroniczną metodę, którą implementuje Mongoose: `car.save()`.
 ```js
 exports.postAddCar = async (req, res) => {
@@ -735,6 +736,7 @@ exports.postAddRental = async (req, res) => {
 ### Dodawanie opinii
 
 `/user/review/add`
+
 Przy dodawaniu opinii również wykorzystaliśmy transakcje, jednak tym razem w inny sposób. Ponownie stworzyliśmy nową sesję i na niej wywołaliśmy metodę `withTransaction`:
 ```js
 await session.withTransaction(async ()=>{})
@@ -877,6 +879,7 @@ exports.patchUpdateRentalDates = async (req, res) => {
 ### Zmiana statusu płatności
 
 `/user/rental/pay`
+
 Aby zmienić już istniejący dokument, wystarczy wydobyć go z bazy danych, zmienić go jak zwykły obiekt Javascript, a następnie wykonać na nim tą samą metodę jak przy dodawaniu nowego dokumentu, czyli `.save()`.
 ```js
 exports.patchUpdateRentalPaidStatus = async (req, res) => {
@@ -983,6 +986,7 @@ exports.getUserRentalHistory = async (req, res) => {
 ### Raport rocznego przychodu z podziałem na miesiące
 
 `/admin/rental/yearly-income?year={year}`
+
 Wykorzystujemy tutaj metodę `aggregate`, która umożliwia nam przetwarzanie wielu dokumentów i zwracanie odpowiednich danych. W tym celu wykorzystane zostały dodatkowo odpowiednie operatory:
 - `$match` - filtruje wynajmy według daty rozpoczęcia i zakończenia, pozostawiając tylko te w określonym zakresie,
 - `$group` - grupuje wyniki po miesiącu rozpoczęcia wynajmu i sumuje przychody z każdego miesiąca,
@@ -1124,6 +1128,7 @@ exports.getYearlyIncomePerCarReport = async (req, res) => {
 ## Sortowanie i filtrowanie samochodów
 
 ### Sortowanie według średniej ocen
+
 `/guest/car/top-rated`
 
 Liczbę ocen samochodu możemy uzyskać sprawdzając długość listy operatorem `$size`. Następnie możemy dodać nowe pole `reviewCount` do zwracanych dokumentów, przy użyciu operatora `$addFields`. Wykorzystane zostały jeszcze inne operatory:
@@ -1279,6 +1284,7 @@ exports.getFilteredCars = async (req, res) => {
 };
 ```
 ![](./images/filter_cars.png)
+
 ## Połączenie z serwisem Firebase
 
 W projekcie wykorzystaliśmy Firebase Storage w którym przechowywujemy pliki (zdjęcia samochodów). W bazie danych zapisujemy natomiast tylko nazwy plików.
@@ -1400,7 +1406,7 @@ res.status(200).json(cars);
 ```
 
 ## Generowanie przykładowych danych i wstawianie ich do bazy danych
-W celu wygenerowania przykładowych danych, wykorzystana została biblioteka `faker`. W przypadku kolekcji `Users` oraz `Cars` tworzone są listy odpowiednich obiektów zgodnie z schematami Mongoose, a następnie wstawiane do bazy za pomocą funkcji `inserMany()`. Jeżeli chodzi o dodawanie wypożyczeń i opinii, to generowane są odpowiednie dane, które wstawiamy do "imitowanego" requesta, aby móc wykorzystać stworzone controllery zapewniając tym samym całą logikę przy dodawaniu dokumentów do kolekcji `Rentals` i `Reviews`.
+W celu wygenerowania przykładowych danych, wykorzystana została biblioteka `faker`. W przypadku kolekcji `Users` oraz `Cars` tworzone są listy odpowiednich obiektów zgodnie z schematami Mongoose, a następnie wstawiane do bazy za pomocą funkcji `insertMany()`. Jeżeli chodzi o dodawanie wypożyczeń i opinii, to generowane są odpowiednie dane, które wstawiamy do "imitowanego" requesta, aby móc wykorzystać stworzone controllery zapewniając tym samym całą logikę przy dodawaniu dokumentów do kolekcji `Rentals` i `Reviews`.
 
 Aby otrzymać przykładowe samochody oraz użytkowników, wykorzystywany jest operator `$sample`.
 ```js
@@ -1433,3 +1439,17 @@ Stworzona została funkcja `generateData`, która jako pierwszy parametr przyjmu
 ```js
 generateData({ users: 10, cars: 10, rentals: 10, reviews: 10 }, true);
 ```
+
+## Podsumowanie
+
+Projekt „Wypożyczalnia samochodów” pozwolił na praktyczne zastosowanie i pogłębienie wiedzy z zakresu różnych technologii backendowych i bazodanowych.
+
+Zastosowanie MongoDB i Mongoose: Praca z MongoDB w połączeniu z Mongoose pozwoliła na efektywne modelowanie danych oraz ich walidację. Wdrażanie schematów i modeli Mongoose pomogło w utrzymaniu czystości kodu oraz w zapewnieniu integralności danych.
+
+Integracja z Node.js i Express.js: Budowanie API za pomocą Express.js na platformie Node.js ukazało, jak elastyczne i mocne narzędzie może służyć do tworzenia skalowalnych aplikacji internetowych. Zarządzanie asynchronicznym przepływem danych i requestów było kluczowe dla zapewnienia szybkości i responsywności systemu.
+
+Wykorzystanie Firebase Storage: Integracja z Firebase Storage pokazała, jak można efektywnie zarządzać zasobami zewnętrznymi takimi jak zdjęcia samochodów. 
+
+Testowanie API z użyciem Postman: Dokumentowanie i testowanie API przy użyciu Postman zapewniało ciągłą weryfikację funkcjonalności przez cały proces tworzenia aplikacji. 
+
+Implementacja autentykacji JWT: Implementacja systemu autentykacji i autoryzacji z użyciem JWT pozwoliła na kontorlę dostępu do zasóbów różnych użytkowników na serwerze.
