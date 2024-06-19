@@ -589,9 +589,11 @@ exports.postAddCar = async (req, res) => {
   const images = [];
   try {
     const files = req.files;
-    for (const file of files) {
-      const fileName = await uploadFile(file);
-      images.push(fileName);
+    if (files?.length > 0) {
+      for (const file of files) {
+        const fileName = await uploadFile(file);
+        images.push(fileName);
+      }
     }
   } catch (error) {
     console.log(error);
